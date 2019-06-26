@@ -1,12 +1,13 @@
 import Vue from 'vue';
 import Router from 'vue-router';
+import firebase from 'firebase';
 import GMap from './components/home/GMap.vue';
 import Signup from './components/auth/Signup.vue';
 import Login from './components/auth/Login.vue';
 
 Vue.use(Router);
 
-export default new Router({
+const router = new Router({
   mode: 'history',
   base: process.env.BASE_URL,
   routes: [
@@ -14,6 +15,9 @@ export default new Router({
       path: '/',
       name: 'GMap',
       component: GMap,
+      meta: {
+        requiresAuth: true,
+      },
     },
     {
       path: '/signup',
@@ -27,3 +31,22 @@ export default new Router({
     },
   ],
 });
+
+router.beforeEach((to, from, next) => {
+  // check to see if route requires auth
+  if (to.matched.some(rec => rec.meta.requiresAuth)) {
+    // check auth state of user
+    const user = firebase.auth().currentUser;
+    if (user) {
+      // user signed in, proceed to route
+      next();
+    } else {
+      // no user signed in, redirect to login
+      next({ name: 'Login' });
+    }
+  } else {
+    next();
+  }
+});
+
+export default router;
